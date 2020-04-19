@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 from collections import Counter
 import math
+np.set_printoptions(suppress=True)
+
 
 def visu_point(file_path):
     txt_file=np.loadtxt(file_path)
@@ -17,9 +19,9 @@ def visu_point(file_path):
     points_info.points=o3d.utility.Vector3dVector(xyz_coor)
     points_info.colors=o3d.utility.Vector3dVector(color_info)
     
+    o3d.visualization.draw_geometries([points_info])
+    
     dcp=o3d.geometry.voxel_down_sample(points_info,0.05)
-    # o3d.geometry.estimate_normals(dcp,search_param=o3d.geometry.KDTreeSearchParamHybrid(
-    #     radius=0.1, max_nn=30))
     o3d.geometry.estimate_normals(
         dcp,
         search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1,
@@ -30,7 +32,7 @@ def visu_point(file_path):
     points_dic['points']=np.array(dcp.points)
     points_dic['color']=np.array(dcp.colors)
     points_dic['norm']=np.array(dcp.normals)
-    np.save('./data/A1_office4.npy',points_dic)
+    # np.save('./data/A1_office_6.npy',points_dic)
     
     o3d.visualization.draw_geometries([dcp])
     
@@ -45,111 +47,70 @@ def load_point(point_path):
     
     return points_coor,points_color,points_norm
 
-def get_direction_list(points_norm):
-    direction_info={}
-    direction_list=[]
-    
-    for direct in range(8):
-        direction_info['a{}'.format(direct)]=[]
-    
-    for indice,norm_vect in enumerate(points_norm):
-        x,y,z=norm_vect
-        
-        #area 0 and 1
-        if 0<=(y/(x+1e-6))<=1:
-            if ((x>=0) and (z>=0)) or ((x<=0) and (z<=0)):
-                direction_info['a0'].append(indice)
-                direction_list.append(0)
-                
-            else: 
-                direction_info['a1'].append(indice)
-                direction_list.append(1)
-        
-        #area 2 and 3
-        elif (y/(x+1e-6))>1:
-            if ((x>=0) and (z>=0)) or ((x<=0) and (z<=0)):
-                direction_info['a2'].append(indice)
-                direction_list.append(2)
-            
-            else:
-                direction_info['a3'].append(indice)
-                direction_list.append(3)
-        
-        #area 4 5
-        elif (y/(x+1e-6))<-1:
-            if ((x<=0) and (z>=0)) or ((x>=0) and (z<=0)):
-                direction_info['a4'].append(indice)
-                direction_list.append(4)
-            
-            else: 
-                direction_info['a5'].append(indice)
-                direction_list.append(5)
-        
-        #area 6,7
-        elif -1<(y/(x+1e-6))<0:
-            if ((x<=0) and (z>=0)) or ((x>=0) and (z<=0)):
-                direction_info['a6'].append(indice)
-                direction_list.append(6)
-            
-            else:
-                direction_info['a7'].append(indice)
-                direction_list.append(7)
-    
-    
-    
-    # lens_list=[]
-    # for key in direction_info.keys():
-    #     lens_list.append(len(direction_info[key]))
-    #     print(len(direction_info[key]))
-    
-    # lens_list=np.array(lens_list)
-    # plt.bar(range(len(lens_list)),lens_list)
-    # plt.show()
-
-    return np.array(direction_list)
 
 
-def cal_entropy(neighbor_area):
-    count=Counter(neighbor_area)
-    num_ele=len(neighbor_area)
+
+def get_points_entropy(point_coordi,point_norm):
+    #fistly we get cos similiarity for every point with its neighbor
+    nbr=NearestNeighbors(n_neighbors=10,algorithm='ball_tree').fit(point_coordi)
+    distance,indice=nbr.kneighbors(point_coordi)
+    num_point=point_coordi.shape[0]
+    
+    #get every point's entropy
+    entropy_list=[]
+    for point_indice in range(num_point):
+        neighbor_indice=indice[point_indice]
+        
+        curent_norm=point_norm[point_indice]
+        
+        neigh_norm=point_norm[neighbor_indice]
+        
+        similarity=np.matmul(curent_norm,neigh_norm.T)
+        similarity=np.clip(similarity,-1,1)
+        degree_list=[]
+        for i in range(len(similarity)):
+            radio=math.acos(similarity[i])
+            degree=math.degrees(radio)
+            # if degree>90:
+            #     degree=180-degree
+            degree_list.append(degree)
+        degree_list=np.array(degree_list)
+        cu_entropy=single_point_entropy(degree_list)
+        entropy_list.append(cu_entropy)
+    
+    entropy_list=np.array(entropy_list)
+    return entropy_list
+        
+        
+def single_point_entropy(degree_list):
+    #devide 90 degree into 9 part, 10 degree each part
+    part_list=(degree_list//10).astype(np.int32)
+    count=Counter(part_list)
+    num_ele=len(part_list)
     
     entropy=0
     for key in count.keys():
         num_appear=count[key]
         propotional=num_appear/num_ele
         entropy=-(propotional)*math.log(propotional,2)
-    
-    return entropy
+
+    return np.abs(entropy)
 
 
-def Shannon_entropy_list(point_cor,point_direction):
-    nbr=NearestNeighbors(n_neighbors=30,algorithm='ball_tree').fit(point_cor)
-    distance,indice=nbr.kneighbors(point_cor)
-    
-    #create entropy_list
-    entroy_list=[]
-    num_point=point_cor.shape[0]
-    for point_indice in range(num_point):
-        this_point_nei=indice[point_indice]
-        nei_area=point_direction[this_point_nei]
-        entropy=cal_entropy(nei_area)
-        entroy_list.append(entropy)
-    
-    entroy_list=np.array(entroy_list)
-    
-    return entroy_list
-    
 
-
+def uniform_norm_sign(points_norm,points_coor):
+    view_point=np.array([99,99,99]).reshape(-1,3)
+    val=np.sum(points_norm*(view_point-points_coor),-1)
+    signs=(val>0).astype(int)*2-1
+    return -signs.reshape(-1, 1)*points_norm
 
 
 def analyse_point(point_path):
     p_loc,p_color,p_norm=load_point(point_path)
-    direction_list=get_direction_list(p_norm)
-    entroy_list=Shannon_entropy_list(p_loc,direction_list)
+    uniform_norm=uniform_norm_sign(p_norm,p_loc)
+    entroy_list=get_points_entropy(p_loc,uniform_norm)
+    
     his=np.histogram(entroy_list,bins=5)
-    
-    
     #change_color
     change_loc=np.where(entroy_list<=0.1)[0]
     p_color[change_loc]=np.array([1,0,0])
@@ -157,6 +118,7 @@ def analyse_point(point_path):
     pointcloud=o3d.geometry.PointCloud()
     pointcloud.points=o3d.utility.Vector3dVector(p_loc)
     pointcloud.colors=o3d.utility.Vector3dVector(p_color)
+    pointcloud.normals=o3d.utility.Vector3dVector(uniform_norm)
     
     o3d.visualization.draw_geometries([pointcloud])
 
@@ -164,7 +126,7 @@ def analyse_point(point_path):
 
 
 if __name__=='__main__':
-    data_path='D:\Computer_vision/3D_Dataset\Stanford_Large_Scale\component_data_maker\Standford_component_data\Area_1\office_4/office_4.txt'
+    data_path='D:\Computer_vision/3D_Dataset\Stanford_Large_Scale\component_data_maker\Standford_component_data\Area_1\office_6/office_6.txt'
     data_path=data_path.replace('\\','/')
     # visu_point(data_path)
-    analyse_point('./data/A1_office4.npy')
+    analyse_point('./data/A1_office_4.npy')
