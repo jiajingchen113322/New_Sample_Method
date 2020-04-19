@@ -120,7 +120,10 @@ def uniform_norm_sign(points_norm,points_coor):
 
 
 def create_new_input(point_path):
-    p_loc,p_color,p_norm,p_label=load_point(point_path)
+    #input is a txt file which contains point xyz_coordinate,color,label
+    #output is a array whose size is (num_point,8), [x,y,z,r,g,b,plane_label]
+    
+     p_loc,p_color,p_norm,p_label=load_point(point_path)
     uniform_norm=uniform_norm_sign(p_norm,p_loc)
    
 
@@ -135,15 +138,15 @@ def create_new_input(point_path):
     
     
     # change_color
-    change_loc=plane_loc
-    p_color[change_loc]=np.array([1,0,0])
+    # change_loc=plane_loc
+    # p_color[change_loc]=np.array([1,0,0])
 
-    pointcloud=o3d.geometry.PointCloud()
-    pointcloud.points=o3d.utility.Vector3dVector(p_loc)
-    pointcloud.colors=o3d.utility.Vector3dVector(p_color)
-    pointcloud.normals=o3d.utility.Vector3dVector(uniform_norm)
+    # pointcloud=o3d.geometry.PointCloud()
+    # pointcloud.points=o3d.utility.Vector3dVector(p_loc)
+    # pointcloud.colors=o3d.utility.Vector3dVector(p_color)
+    # pointcloud.normals=o3d.utility.Vector3dVector(uniform_norm)
     
-    o3d.visualization.draw_geometries([pointcloud])
+    # o3d.visualization.draw_geometries([pointcloud])
     return new_inpt
         
 
