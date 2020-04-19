@@ -13,6 +13,7 @@ def visu_point(file_path):
     txt_file=np.loadtxt(file_path)
     xyz_coor=txt_file[:,:3]
     color_info=txt_file[:,3:6]/256
+    label=txt_file[:,-1]
     
     # make points here
     points_info=o3d.geometry.PointCloud()
@@ -27,12 +28,19 @@ def visu_point(file_path):
         search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1,
                                                           max_nn=30))
     
+    dcp_point=np.array(dcp.points)
+    nbrs=NearestNeighbors(n_neighbors=2,algorithm='ball_tree').fit(xyz_coor)
+    dist,indice=nbrs.kneighbors(dcp_point)
+    indice=indice[:,1]
+    new_label=label[indice]    
+    
     
     points_dic={}
     points_dic['points']=np.array(dcp.points)
     points_dic['color']=np.array(dcp.colors)
     points_dic['norm']=np.array(dcp.normals)
-    # np.save('./data/A1_office_6.npy',points_dic)
+    points_dic['label']=new_label
+    np.save('./data/A1_office_6.npy',points_dic)
     
     o3d.visualization.draw_geometries([dcp])
     
@@ -44,15 +52,18 @@ def load_point(point_path):
     points_coor=points_dic['points']
     points_color=points_dic['color']
     points_norm=points_dic['norm']
+    points_labe=points_dic['label']
     
-    return points_coor,points_color,points_norm
+    # o3d.visualization.draw_geometries([pointcloud])
+    
+    return points_coor,points_color,points_norm,points_labe
 
 
 
 
 def get_points_entropy(point_coordi,point_norm):
     #fistly we get cos similiarity for every point with its neighbor
-    nbr=NearestNeighbors(n_neighbors=10,algorithm='ball_tree').fit(point_coordi)
+    nbr=NearestNeighbors(n_neighbors=30,algorithm='ball_tree').fit(point_coordi)
     distance,indice=nbr.kneighbors(point_coordi)
     num_point=point_coordi.shape[0]
     
@@ -105,22 +116,31 @@ def uniform_norm_sign(points_norm,points_coor):
     return -signs.reshape(-1, 1)*points_norm
 
 
-def analyse_point(point_path):
-    p_loc,p_color,p_norm=load_point(point_path)
+def create_new_input(point_path):
+    p_loc,p_color,p_norm,p_label=load_point(point_path)
     uniform_norm=uniform_norm_sign(p_norm,p_loc)
+   
+
+    #create plane label
     entroy_list=get_points_entropy(p_loc,uniform_norm)
+    plane_label=np.zeros_like(p_label)
+    plane_loc=np.where(entroy_list<=0.1)[0]
+    plane_label[plane_loc]=1
     
-    his=np.histogram(entroy_list,bins=5)
+    new_inpt=np.concatenate([p_loc,p_color,plane_label[:,np.newaxis],p_label[:,np.newaxis]],axis=1)
+    return new_inpt
+    
+    
     #change_color
-    change_loc=np.where(entroy_list<=0.1)[0]
-    p_color[change_loc]=np.array([1,0,0])
+    # change_loc=np.where(entroy_list<=0.1)[0]
+    # p_color[change_loc]=np.array([1,0,0])
+
+    # pointcloud=o3d.geometry.PointCloud()
+    # pointcloud.points=o3d.utility.Vector3dVector(p_loc)
+    # pointcloud.colors=o3d.utility.Vector3dVector(p_color)
+    # pointcloud.normals=o3d.utility.Vector3dVector(uniform_norm)
     
-    pointcloud=o3d.geometry.PointCloud()
-    pointcloud.points=o3d.utility.Vector3dVector(p_loc)
-    pointcloud.colors=o3d.utility.Vector3dVector(p_color)
-    pointcloud.normals=o3d.utility.Vector3dVector(uniform_norm)
-    
-    o3d.visualization.draw_geometries([pointcloud])
+    # o3d.visualization.draw_geometries([pointcloud])
 
         
 
@@ -129,4 +149,4 @@ if __name__=='__main__':
     data_path='D:\Computer_vision/3D_Dataset\Stanford_Large_Scale\component_data_maker\Standford_component_data\Area_1\office_6/office_6.txt'
     data_path=data_path.replace('\\','/')
     # visu_point(data_path)
-    analyse_point('./data/A1_office_4.npy')
+    create_new_input('./data/A1_office_6.npy')
