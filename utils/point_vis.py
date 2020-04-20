@@ -12,7 +12,7 @@ np.set_printoptions(suppress=True)
 def get_point_info_dict(file_path):
     txt_file=np.loadtxt(file_path)
     xyz_coor=txt_file[:,:3]
-    color_info=txt_file[:,3:6]/256
+    color_info=txt_file[:,3:6]
     label=txt_file[:,-1]
     
     # make points here
@@ -123,7 +123,7 @@ def create_new_input(point_path):
     #input is a txt file which contains point xyz_coordinate,color,label
     #output is a array whose size is (num_point,8), [x,y,z,r,g,b,plane_label]
     
-     p_loc,p_color,p_norm,p_label=load_point(point_path)
+    p_loc,p_color,p_norm,p_label=load_point(point_path)
     uniform_norm=uniform_norm_sign(p_norm,p_loc)
    
 
