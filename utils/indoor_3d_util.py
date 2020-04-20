@@ -229,11 +229,13 @@ def room2blocks_plus_normalized(data_label, num_point, block_size, stride,
     """ room2block, with input filename and RGB preprocessing.
         for each block centralize XYZ, add normalized XYZ as 678 channels
     """
+    #shift point cloud's origin to the (0,0,0)
     data_label[:,0]+=(0-np.min(data_label[:,0]))
     data_label[:,1]+=(0-np.min(data_label[:,1]))
+    
     data = data_label[:,0:6]
     data[:,3:6] /= 255.0
-    label = data_label[:,-1].astype(np.uint8)
+    label = data_label[:,-2:].astype(np.uint8)
     max_room_x = max(data[:,0])
     max_room_y = max(data[:,1])
     max_room_z = max(data[:,2])

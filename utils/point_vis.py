@@ -134,11 +134,12 @@ def create_new_input(point_path):
     plane_label[plane_loc]=1
     
     new_inpt=np.concatenate([p_loc,p_color,plane_label[:,np.newaxis],p_label[:,np.newaxis]],axis=1)
-    # return new_inpt
+    
     
     
     # change_color
     # change_loc=plane_loc
+    # p_color=p_color/255
     # p_color[change_loc]=np.array([1,0,0])
 
     # pointcloud=o3d.geometry.PointCloud()
@@ -152,8 +153,8 @@ def create_new_input(point_path):
 
 
 if __name__=='__main__':
-    data_path='D:\Computer_vision/3D_Dataset\Stanford_Large_Scale\component_data_maker\Standford_component_data\Area_1\office_6/office_6.txt'
+    data_path='D:\Computer_vision/3D_Dataset\Stanford_Large_Scale\component_data_maker\Standford_component_data\Area_1\conferenceRoom_1/conferenceRoom_1.txt'
     data_path=data_path.replace('\\','/')
-    # visu_point(data_path)
+    # get_point_info_dict(data_path)
     # create_new_input('./data/A1_office_6.npy')
     create_new_input(data_path)

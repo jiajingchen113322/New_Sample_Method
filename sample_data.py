@@ -29,7 +29,7 @@ def create_sample_data(data_path,NUM_POINT):
                     #这里使用的是样本数据
                     # new_inpt=create_new_input(rooomtxt_file)
                     new_inpt=np.load('./temp_data/conf1.npy')
-                    batch_data,label=indoor_3d_util.room2blocks_wrapper_normalized(new_inpt, NUM_POINT, block_size=1.0, stride=0.5, random_sample=False, sample_num=None)
+                    batch_data,label=indoor_3d_util.room2blocks_wrapper_normalized(new_inpt, NUM_POINT, block_size=2.0, stride=0.5, random_sample=False, sample_num=None)
                     s
     # new_inpt=create_new_input(data_path)
     # s
