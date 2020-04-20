@@ -116,14 +116,30 @@ def sample_data(data, num_sample):
     if (N == num_sample):
         return data, range(N)
     elif (N > num_sample):
-        sample = np.random.choice(N, num_sample)
-        return data[sample, ...], sample
+        non_plane_data_loc=np.where(data[:,-1]==0)[0]
+        if non_plane_data_loc.shape[0]>num_sample:
+            picked_point_indice=np.random.choice(non_plane_data_loc,num_sample,replace=False)
+            return data[picked_point_indice,:],picked_point_indice
+        else:
+            plane_data_loc=np.where(data[:,-1]==1)[0]
+            plane_picked=np.random.choice(plane_data_loc,num_sample-non_plane_data_loc.shape[0],replace=False)
+            
+            #concatenate all nonplane and picked plane
+            final_indice=np.concatenate([non_plane_data_loc,plane_picked])
+            returned_data=data[final_indice,:]
+            
+            return returned_data,final_indice
+        
     else:
         sample = np.random.choice(N, num_sample-N)
         dup_data = data[sample, ...]
         return np.concatenate([data, dup_data], 0), list(range(N))+list(sample)
 
 def sample_data_label(data, label, num_sample):
+    #here we put plane label into data
+    data=np.concatenate([data,label[:,-2][:,np.newaxis]],axis=1)
+    label=label[:,-1]
+    
     new_data, sample_indices = sample_data(data, num_sample)
     new_label = label[sample_indices]
     return new_data, new_label
@@ -242,7 +258,7 @@ def room2blocks_plus_normalized(data_label, num_point, block_size, stride,
     
     data_batch, label_batch = room2blocks(data, label, num_point, block_size, stride,
                                           random_sample, sample_num, sample_aug)
-    new_data_batch = np.zeros((data_batch.shape[0], num_point, 9))
+    new_data_batch = np.zeros((data_batch.shape[0], num_point, 10))
     for b in range(data_batch.shape[0]):
         new_data_batch[b, :, 6] = data_batch[b, :, 0]/max_room_x
         new_data_batch[b, :, 7] = data_batch[b, :, 1]/max_room_y
@@ -251,7 +267,8 @@ def room2blocks_plus_normalized(data_label, num_point, block_size, stride,
         miny = min(data_batch[b, :, 1])
         data_batch[b, :, 0] -= (minx+block_size/2)
         data_batch[b, :, 1] -= (miny+block_size/2)
-    new_data_batch[:, :, 0:6] = data_batch
+    new_data_batch[:, :, 0:6] = data_batch[:,:,0:-1]
+    new_data_batch[:,:,-1]=data_batch[:,:,-1]
     return new_data_batch, label_batch
 
 #这里是主用的函数
