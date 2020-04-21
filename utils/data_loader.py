@@ -42,6 +42,18 @@ class S3DISDataset(data.Dataset):
         return len(self.batch_list)
 
 
+def get_sets(data_path,batch_size):
+    train_data=S3DISDataset(data_path,split='train')
+    train_loader=data.DataLoader(dataset=train_data,batch_size=batch_size,shuffle=False,num_workers=2)
+
+    test_data=S3DISDataset(data_path,split='test')
+    test_loader=data.DataLoader(dataset=test_data,batch_size=batch_size,shuffle=False,num_workers=2)
+
+    valid_loader=S3DISDataset(data_path,split='valid')
+    valid_loader=data.DataLoader(dataset=valid_loader,batch_size=batch_size,shuffle=False,num_workers=2)
+    
+    return train_loader,test_loader,valid_loader
+
 
 
 if __name__=='__main__':
