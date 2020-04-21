@@ -27,12 +27,24 @@ class S3DISDataset(data.Dataset):
                 batch_list=os.listdir(batch_folder_path)
                 for batch in batch_list:
                     batch_path=os.path.join(batch_folder_path,batch)
-                    
+                    all_batch_list.append(batch_path)
+        
+        return all_batch_list
     
+    def __getitem__(self,batch_index):
+        txt_file=self.batch_list[batch_index]
+        data=np.loadtxt(txt_file)
+        inpt=torch.FloatTensor(data[:,0:-1])
+        label=torch.LongTensor(data[:,-1])
+        return inpt,label
+
+    def __len__(self):
+        return len(self.batch_list)
 
 
 
 
 if __name__=='__main__':
-    data_path='D:\Computer_vision\\3D_Dataset\Stanford_Large_Scale\component_data_maker\Standford_component_data'
+    data_path='/data1/datasets/Standford_component_data'
     dataset=S3DISDataset(data_path,split='train')
+    inpt,label=dataset[20]
