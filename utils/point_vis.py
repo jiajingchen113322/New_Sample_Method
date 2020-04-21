@@ -138,22 +138,22 @@ def create_new_input(point_path):
     
     
     # change_color
-    # change_loc=plane_loc
-    # p_color=p_color/255
-    # p_color[change_loc]=np.array([1,0,0])
+    change_loc=plane_loc
+    p_color=p_color/255
+    p_color[change_loc]=np.array([1,0,0])
 
-    # pointcloud=o3d.geometry.PointCloud()
-    # pointcloud.points=o3d.utility.Vector3dVector(p_loc)
-    # pointcloud.colors=o3d.utility.Vector3dVector(p_color)
-    # pointcloud.normals=o3d.utility.Vector3dVector(uniform_norm)
+    pointcloud=o3d.geometry.PointCloud()
+    pointcloud.points=o3d.utility.Vector3dVector(p_loc)
+    pointcloud.colors=o3d.utility.Vector3dVector(p_color)
+    pointcloud.normals=o3d.utility.Vector3dVector(uniform_norm)
     
-    # o3d.visualization.draw_geometries([pointcloud])
+    o3d.visualization.draw_geometries([pointcloud])
     return new_inpt
         
 
 
 if __name__=='__main__':
-    data_path='D:\Computer_vision/3D_Dataset\Stanford_Large_Scale\component_data_maker\Standford_component_data\Area_1\conferenceRoom_1/conferenceRoom_1.txt'
+    data_path='D:\Computer_vision\\3D_Dataset\Stanford_Large_Scale\component_data_maker\Standford_component_data\Area_3\storage_1\storage_1.txt'
     data_path=data_path.replace('\\','/')
     # get_point_info_dict(data_path)
     # create_new_input('./data/A1_office_6.npy')
