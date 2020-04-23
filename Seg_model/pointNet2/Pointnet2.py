@@ -1,6 +1,10 @@
 import torch.nn as nn
 import torch.nn.functional as F
+import sys
+
+sys.path.append('./Seg_model/pointNet2')
 from pointnet_utils import PointNetSetAbstractionMsg,PointNetFeaturePropagation
+
 
 
 class get_model(nn.Module):
@@ -21,6 +25,9 @@ class get_model(nn.Module):
         self.conv2 = nn.Conv1d(128, num_classes, 1)
 
     def forward(self, xyz):
+        #the inpt shape should be [batch,num_point,feature]
+        xyz=xyz.permute(0,2,1)
+
         l0_points = xyz
         l0_xyz = xyz[:,:3,:]
 
@@ -52,6 +59,6 @@ class get_loss(nn.Module):
 if __name__ == '__main__':
     import  torch
     model = get_model(13)
-    xyz = torch.rand(6, 10, 2048)
+    xyz = torch.rand(6, 2048, 10)
     y=model(xyz)
-
+    s
