@@ -2,16 +2,22 @@ import numpy as np
 import torch
 from Seg_model.pointNet2.Pointnet2 import get_model
 from utils.data_loader import get_sets
+from utils.test_perform_cal import get_mean_accuracy
 import torch.nn as nn
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
+from datetime import datetime
+
+TIMESTAMP = "{0:%Y-%m-%dT%H-%M-%S/}".format(datetime.now())
+
+
 
 def main(data_path,train=True):
     torch.backends.cudnn.enabled=False
     
     #set seed 
-    torch.random.seed()
-    model=get_model(13)
+    # torch.random.seed()
+    model=get_model(13,inpt_length=9)
     
     train_loader,test_loader,valid_loader=get_sets(data_path,batch_size=16)
     
@@ -27,11 +33,11 @@ def train_model(model,train_loader,valid_loader):
     assert torch.cuda.is_available()
     
     #这里应该用GPU
-    # device=torch.device('cuda:0')
-    # model=model.to(device)
-    
-    device=torch.device('cpu')
+    device=torch.device('cuda:0')
     model=model.to(device)
+    
+    # device=torch.device('cpu')
+    # model=model.to(device)
     
 
     loss_func=nn.CrossEntropyLoss()
@@ -46,10 +52,21 @@ def train_model(model,train_loader,valid_loader):
         iterations=tqdm(train_loader,ncols=100,unit='batch',leave=False)
         
         #真正训练这里应该解封
-        # epsum=run_one_epoch(model,iterations,"train",loss_func=loss_func,optimizer=optimizer,loss_interval=10)
+        epsum=run_one_epoch(model,iterations,"train",loss_func=loss_func,optimizer=optimizer,loss_interval=10)
         
-        epsum={'losses':2.0}
         summary={"loss/train":np.mean(epsum['losses'])}
+        return summary
+
+
+    def eval_one_epoch():
+        iteration=tqdm(valid_loader,ncols=100,unit='batch',leave=False)
+        #epsum only have logit and labes
+        #epsum['logti'] is (batch,4096,13)
+        #epsum['labels] is (batch,4096)
+        
+        epsum=run_one_epoch(model,iteration,"valid")
+        mean_acc=get_mean_accuracy(epsum)
+        summary={'meac':mean_acc}
         return summary
 
 
@@ -57,13 +74,25 @@ def train_model(model,train_loader,valid_loader):
     #build tensorboard
     initial_epoch=0
     training_epoch=58
-    tensorboard=SummaryWriter(log_dir='./tensorboard_file')
+    tensorboard=SummaryWriter(log_dir='./tensorboard_file/test_on_{0}/{1}'.format(5,TIMESTAMP))
     tqdm_epoch=tqdm(range(initial_epoch,training_epoch),unit='epoch',ncols=100)
     
     for e in tqdm_epoch:
-        train_summery=train_one_epoch()
-        s
+        train_summary=train_one_epoch()
+        valid_summary=eval_one_epoch()
+        summary={**train_summary,**valid_summary}
 
+        #save checkpoint
+        if (e%5==0) or (e==training_epoch-1):
+            summary_saved={**train_summary,
+                            'model_state':model.state_dict(),
+                            'optimizer_state':optimizer.state_dict()}
+
+            torch.save(summary_saved,'./pth_file/epoch_{}'.format(e))
+        
+        for name,val in summary.items():
+            tensorboard.add_scalar(name,val,e)
+    
 
 
 def run_one_epoch(model,tqdm_iter,mode,loss_func=None,optimizer=None,loss_interval=10):
