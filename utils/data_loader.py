@@ -23,7 +23,7 @@ class S3DISDataset(data.Dataset):
             area_path=os.path.join(self.root,area)
             room_list=os.listdir(area_path)
             for room in room_list:
-                batch_folder_path=os.path.join(area_path,room,'novel_sample_batch')
+                batch_folder_path=os.path.join(area_path,room,'Batch_Folder')
                 batch_list=os.listdir(batch_folder_path)
                 for batch in batch_list:
                     batch_path=os.path.join(batch_folder_path,batch)
@@ -60,3 +60,4 @@ if __name__=='__main__':
     data_path='/data1/datasets/Standford_component_data'
     dataset=S3DISDataset(data_path,split='train')
     inpt,label=dataset[20]
+    
