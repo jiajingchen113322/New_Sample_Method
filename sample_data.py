@@ -27,9 +27,9 @@ def create_sample_data(data_path,NUM_POINT):
                 if fil[-3:]=='txt':
                     rooomtxt_file=os.path.join(room_path,fil)
                     #这里使用的是样本数据
-                    new_inpt=create_new_input(rooomtxt_file)
-                    # new_inpt=np.load('./temp_data/conf1.npy')
-                    batch_data,label=indoor_3d_util.room2blocks_wrapper_normalized(new_inpt, NUM_POINT, block_size=2.0, stride=0.5, random_sample=False, sample_num=None)
+                    # new_inpt=create_new_input(rooomtxt_file)
+                    new_inpt=np.load('./temp_data/dens_stor.npy')
+                    batch_data,label=indoor_3d_util.room2blocks_wrapper_normalized(new_inpt, NUM_POINT, block_size=1.0, stride=0.5, random_sample=False, sample_num=None)
                     data_batch=np.concatenate((batch_data,np.expand_dims(label,2)),2)
                     for i in range(data_batch.shape[0]):
                         data_saved=data_batch[i]

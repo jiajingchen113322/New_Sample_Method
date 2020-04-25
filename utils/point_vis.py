@@ -28,38 +28,36 @@ def get_point_info_dict(file_path):
         search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1,
                                                           max_nn=30))
     
-    dcp_point=np.array(dcp.points)
-    nbrs=NearestNeighbors(n_neighbors=2,algorithm='ball_tree').fit(xyz_coor)
-    dist,indice=nbrs.kneighbors(dcp_point)
-    indice=indice[:,1]
-    new_label=label[indice]    
+    # dcp_point=np.array(dcp.points)
+    # nbrs=NearestNeighbors(n_neighbors=2,algorithm='ball_tree').fit(xyz_coor)
+    # dist,indice=nbrs.kneighbors(dcp_point)
+    # indice=indice[:,1]
+    # new_label=label[indice]    
     
     
     points_dic={}
     points_dic['points']=np.array(dcp.points)
     points_dic['color']=np.array(dcp.colors)
     points_dic['norm']=np.array(dcp.normals)
-    points_dic['label']=new_label
     
-    return points_dic
+    return points_dic,txt_file
     # np.save('./data/A1_office_6.npy',points_dic)
     
     # o3d.visualization.draw_geometries([dcp])
     
 
 def load_point(point_path):
-    points_dic=get_point_info_dict(point_path)
+    points_dic,original_points_array=get_point_info_dict(point_path)
     # points_dic=np.load(point_path,allow_pickle=True).item()
    
    #load basic information
     points_coor=points_dic['points']
     points_color=points_dic['color']
     points_norm=points_dic['norm']
-    points_labe=points_dic['label']
     
     # o3d.visualization.draw_geometries([pointcloud])
     
-    return points_coor,points_color,points_norm,points_labe
+    return points_coor,points_color,points_norm,original_points_array
 
 
 
@@ -123,32 +121,45 @@ def create_new_input(point_path):
     #input is a txt file which contains point xyz_coordinate,color,label
     #output is a array whose size is (num_point,8), [x,y,z,r,g,b,plane_label]
     
-    p_loc,p_color,p_norm,p_label=load_point(point_path)
+    p_loc,p_color,p_norm,original_points=load_point(point_path)
+    original_loc=original_points[:,:3]
     uniform_norm=uniform_norm_sign(p_norm,p_loc)
    
 
     #create plane label
     entroy_list=get_points_entropy(p_loc,uniform_norm)
-    plane_label=np.zeros_like(p_label)
+    plane_label=np.zeros((p_loc.shape[0]))
     plane_loc=np.where(entroy_list<=0.1)[0]
     plane_label[plane_loc]=1
     
-    new_inpt=np.concatenate([p_loc,p_color,plane_label[:,np.newaxis],p_label[:,np.newaxis]],axis=1)
+    # new_inpt=np.concatenate([p_loc,p_color,plane_label[:,np.newaxis],p_label[:,np.newaxis]],axis=1)
     
+    #Based on downsampling information, retrieve orginal dense points information
+    nbrs=NearestNeighbors(n_neighbors=1,algorithm='ball_tree').fit(p_loc)
+    dist,indic=nbrs.kneighbors(original_loc)
+    original_plane_label=plane_label[indic.reshape(-1)]
+    final_dense=np.concatenate([original_points,np.zeros_like(indic)],axis=1)
+    final_dense[:,-1]=final_dense[:,-2]
+    
+    #final_dense[:6] is xyz and color information, [6] is plane label,[7] is segmentation label
+    final_dense[:,-2]=original_plane_label
     
     
     # change_color
-    change_loc=plane_loc
-    p_color=p_color/255
-    p_color[change_loc]=np.array([1,0,0])
+    #visulization part
+   
+    # final_points=final_dense[:,:3]
+    # final_points_color=final_dense[:,3:6]/255
+    # plane_loc=np.where(final_dense[:,6]==1)[0]
+    # final_points_color[plane_loc]=np.array([1,0,0])
 
-    pointcloud=o3d.geometry.PointCloud()
-    pointcloud.points=o3d.utility.Vector3dVector(p_loc)
-    pointcloud.colors=o3d.utility.Vector3dVector(p_color)
-    pointcloud.normals=o3d.utility.Vector3dVector(uniform_norm)
+    # pointcloud=o3d.geometry.PointCloud()
+    # pointcloud.points=o3d.utility.Vector3dVector(final_points)
+    # pointcloud.colors=o3d.utility.Vector3dVector(final_points_color)
+    # o3d.visualization.draw_geometries([pointcloud])
     
-    o3d.visualization.draw_geometries([pointcloud])
-    return new_inpt
+    #final_dense[:6] is xyz and color information, [6] is plane label,[7] is segmentation label
+    return final_dense
         
 
 
@@ -157,4 +168,5 @@ if __name__=='__main__':
     data_path=data_path.replace('\\','/')
     # get_point_info_dict(data_path)
     # create_new_input('./data/A1_office_6.npy')
-    create_new_input(data_path)
+    dense_conf=create_new_input(data_path)
+    np.save('./temp_data/dens_stor',dense_conf)

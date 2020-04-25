@@ -117,6 +117,8 @@ def sample_data(data, num_sample):
         return data, range(N)
     elif (N > num_sample):
         non_plane_data_loc=np.where(data[:,-1]==0)[0]
+        print(data.shape)
+        print(non_plane_data_loc.shape)
         if non_plane_data_loc.shape[0]>num_sample:
             picked_point_indice=np.random.choice(non_plane_data_loc,num_sample,replace=False)
             return data[picked_point_indice,:],picked_point_indice
