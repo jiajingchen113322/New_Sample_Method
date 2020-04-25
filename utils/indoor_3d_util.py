@@ -117,20 +117,33 @@ def sample_data(data, num_sample):
         return data, range(N)
     elif (N > num_sample):
         non_plane_data_loc=np.where(data[:,-1]==0)[0]
-        print(data.shape)
-        print(non_plane_data_loc.shape)
-        if non_plane_data_loc.shape[0]>num_sample:
-            picked_point_indice=np.random.choice(non_plane_data_loc,num_sample,replace=False)
-            return data[picked_point_indice,:],picked_point_indice
+        plane_data_loc=np.where(data[:,-1])[0]
+        # print(data.shape)
+        # print(non_plane_data_loc.shape)
+        if non_plane_data_loc.shape[0]<num_sample:
+            plane_picked=np.random.choice(plane_data_loc,num_sample-non_plane_data_loc.shape[0])
+            picked_indice=np.concatenate([non_plane_data_loc,plane_picked])
+            return data[picked_indice,:], picked_indice
+        
         else:
-            plane_data_loc=np.where(data[:,-1]==1)[0]
-            plane_picked=np.random.choice(plane_data_loc,num_sample-non_plane_data_loc.shape[0],replace=False)
+            half_point=int(num_sample//2)
+            plane_picked=np.random.choice(plane_data_loc,half_point)
+            non_planed_picked=np.random.choice(non_plane_data_loc,half_point)
+            picked_indice=np.concatenate([plane_picked,non_planed_picked])
+            return data[picked_indice,:],picked_indice
+        
+        # if non_plane_data_loc.shape[0]>num_sample:
+        #     picked_point_indice=np.random.choice(non_plane_data_loc,num_sample,replace=False)
+        #     return data[picked_point_indice,:],picked_point_indice
+        # else:
+        #     plane_data_loc=np.where(data[:,-1]==1)[0]
+        #     plane_picked=np.random.choice(plane_data_loc,num_sample-non_plane_data_loc.shape[0],replace=False)
             
-            #concatenate all nonplane and picked plane
-            final_indice=np.concatenate([non_plane_data_loc,plane_picked])
-            returned_data=data[final_indice,:]
+        #     #concatenate all nonplane and picked plane
+        #     final_indice=np.concatenate([non_plane_data_loc,plane_picked])
+        #     returned_data=data[final_indice,:]
             
-            return returned_data,final_indice
+        #     return returned_data,final_indice
         
     else:
         sample = np.random.choice(N, num_sample-N)
